@@ -121,3 +121,26 @@ FruityVisionAI/
 ├── train_ripeness_classifier.py
 └── requirements-train.txt
 ```
+
+## Push to GitHub
+
+The repo is already initialized with an initial commit. To add it to GitHub:
+
+1. **Create a new repository** on [github.com](https://github.com/new):
+   - Name it (e.g. `FruityVisionAI` or `clearscan-ai`).
+   - Do **not** add a README, .gitignore, or license (they already exist).
+
+2. **Add the remote and push:**
+   ```bash
+   cd /path/to/FruityVisionAI
+   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+   git branch -M main
+   git push -u origin main
+   ```
+   Replace `YOUR_USERNAME` and `YOUR_REPO_NAME` with your GitHub username and repo name.
+
+3. If you use SSH:
+   ```bash
+   git remote add origin git@github.com:YOUR_USERNAME/YOUR_REPO_NAME.git
+   git push -u origin main
+   ```
