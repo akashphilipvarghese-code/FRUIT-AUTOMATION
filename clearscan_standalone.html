@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>ClearScan AI – Fruit Quality Grading</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: #000; color: #fff; min-height: 100vh; }
+    .grid-bg { background-image: linear-gradient(to right, rgba(26,26,26,.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(26,26,26,.08) 1px, transparent 1px); background-size: 20px 20px; }
+    .app-shell { display: flex; flex-direction: column; min-height: 100vh; max-width: 28rem; margin: 0 auto; background: #0a0a0a; box-shadow: 0 0 0 1px #1a1a1a; }
+    @media (min-width: 600px) { .app-shell { max-width: 32rem; } }
+    header { border-bottom: 1px solid #1f1f1f; background: #0a0a0a; position: sticky; top: 0; z-index: 10; }
+    .header-inner { padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-weight: 700; font-size: 1.25rem; color: #fff; letter-spacing: -0.02em; }
+    .logo span { color: #FF8C00; }
+    .nav-tabs { display: flex; align-items: center; gap: 0.25rem; }
+    .nav-tab { padding: 0.5rem 0.75rem; border: none; border-radius: 0.5rem; color: #6b7280; background: transparent; cursor: pointer; font-size: 0.875rem; font-weight: 500; }
+    .nav-tab:hover { color: #fff; }
+    .nav-tab.active { color: #FF8C00; background: rgba(255,140,0,.1); }
+    .btn-logout { padding: 0.5rem 0.75rem; border: none; border-radius: 0.5rem; color: #6b7280; background: transparent; cursor: pointer; font-size: 0.875rem; }
+    .btn-logout:hover { color: #ef4444; }
+    main { flex: 1; padding: 1rem; padding-bottom: 5rem; }
+    .page-title { font-size: 1.125rem; font-weight: 600; color: #fff; margin: 0 0 1rem 0; }
+    .camera-wrap { position: relative; aspect-ratio: 4/3; max-height: 70vh; border-radius: 0.75rem; overflow: hidden; border: 1px solid #262626; background: #000; }
+    .camera-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .camera-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,.8); color: #6b7280; padding: 1rem; text-align: center; gap: 0.75rem; }
+    .btn-camera-try-again { padding: 0.75rem 1.25rem; background: #FF8C00; color: #000; font-weight: 600; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.9rem; }
+    .btn-camera-try-again:hover { background: #e67e00; }
+    .camera-reset-hint { font-size: 0.75rem; color: #9ca3af; max-width: 20rem; margin: 0; }
+    .btn-capture { width: 100%; margin-top: 1rem; padding: 1rem 1.5rem; background: #FF8C00; color: #000; font-weight: 700; border: none; border-radius: 0.75rem; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(255,140,0,.3); }
+    .btn-capture:hover { background: #e67e00; }
+    .btn-capture:disabled { opacity: 0.5; cursor: not-allowed; }
+    .upload-section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #2a2a2a; }
+    .upload-section .or { text-align: center; color: #6b7280; font-size: 0.875rem; margin: 0.75rem 0; }
+    .dropzone { border: 2px dashed #FF8C00; border-radius: 0.75rem; padding: 2rem; text-align: center; background: rgba(255,140,0,.05); cursor: pointer; transition: background .2s; }
+    .dropzone:hover { background: rgba(255,140,0,.1); }
+    .dropzone.dragover { background: rgba(255,140,0,.15); border-color: #e67e00; }
+    .dropzone .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .dropzone .title { color: #fff; font-weight: 600; margin-bottom: 0.25rem; }
+    .dropzone .hint { color: #6b7280; font-size: 0.875rem; }
+    input[type="file"] { display: none; }
+    @keyframes scan { 0% { top: 0; opacity: 1; } 100% { top: 100%; opacity: 0.3; } }
+    .laser { position: absolute; left: 0; right: 0; height: 4px; background: #FF8C00; box-shadow: 0 0 20px 8px rgba(255,140,0,.8); animation: scan 2.5s ease-in-out forwards; pointer-events: none; }
+    .scan-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+    .scan-overlay span { color: #FF8C00; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.875rem; }
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .compare-box { border-radius: 0.75rem; overflow: hidden; background: #111; border: 1px solid #2a2a2a; }
+    .compare-box.capture { border-color: #2a2a2a; }
+    .compare-box.match { border-color: rgba(255,140,0,.5); }
+    .compare-box .label { padding: 0.5rem 1rem; border-bottom: 1px solid #2a2a2a; font-size: 0.75rem; color: #6b7280; text-align: center; }
+    .compare-box.match .label { color: #FF8C00; }
+    .compare-box .img-wrap { aspect-ratio: 1; background: #0a0a0a; display: flex; align-items: center; justify-content: center; }
+    .compare-box .img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .compare-box .img-wrap .no-img { color: #6b7280; font-size: 0.875rem; text-align: center; padding: 1rem; }
+    .result-card { border-radius: 0.75rem; border: 1px solid #262626; background: #111; padding: 1.25rem; margin-bottom: 1rem; }
+    .result-card p { margin: 0.25rem 0; }
+    .result-card .label { font-size: 0.75rem; color: #6b7280; }
+    .result-card .value { font-size: 1.125rem; font-weight: 700; color: #FF8C00; }
+    .result-card .error { color: #f59e0b; font-size: 0.875rem; }
+    .ripeness-circle-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 1rem; }
+    .ripeness-circle { width: 10rem; height: 10rem; border-radius: 50%; border: 3px solid #FF8C00; background: rgba(255,140,0,.08); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 24px rgba(255,140,0,.2); }
+    .ripeness-circle .stage { font-size: 1.25rem; font-weight: 700; color: #FF8C00; text-align: center; line-height: 1.2; padding: 0 0.5rem; }
+    .ripeness-circle .confidence { font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; }
+    .btn-new { width: 100%; padding: 1rem 1.5rem; background: #FF8C00; color: #000; font-weight: 700; border: none; border-radius: 0.75rem; cursor: pointer; font-size: 1rem; margin-top: 0.5rem; }
+    .btn-new:hover { background: #e67e00; }
+    .back-link { color: #FF8C00; background: none; border: none; cursor: pointer; font-size: 1rem; margin-bottom: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .back-link:hover { text-decoration: underline; }
+    .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); max-width: 28rem; width: 100%; display: flex; background: #0a0a0a; border-top: 1px solid #1f1f1f; padding: 0.5rem; gap: 0.5rem; z-index: 10; }
+    @media (min-width: 600px) { .bottom-nav { max-width: 32rem; } }
+    .bottom-nav button { flex: 1; padding: 0.75rem; border: none; border-radius: 0.5rem; background: transparent; color: #6b7280; font-size: 0.875rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+    .bottom-nav button:hover { color: #fff; background: #1a1a1a; }
+    .bottom-nav button.active { color: #FF8C00; background: rgba(255,140,0,.1); }
+    .history-list { list-style: none; padding: 0; margin: 0; }
+    .history-list li { display: flex; gap: 1rem; padding: 1rem; border: 1px solid #262626; border-radius: 0.5rem; margin-bottom: 0.5rem; background: #111; align-items: center; }
+    .history-list li img { width: 4rem; height: 4rem; object-fit: cover; border-radius: 0.25rem; }
+    .hidden { display: none !important; }
+    footer { border-top: 1px solid #2a2a2a; padding: 1rem 1.5rem; margin-top: 2rem; }
+    .footer-inner { max-width: 64rem; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #6b7280; }
+    .dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; animation: pulse 1.5s infinite; display: inline-block; margin-right: 0.25rem; }
+    @keyframes pulse { 50% { opacity: .5; } }
+    /* Login page */
+    .login-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
+    .login-box { width: 100%; max-width: 22rem; border-radius: 1rem; border: 1px solid #262626; background: #0a0a0a; padding: 2rem; box-shadow: 0 0 0 1px rgba(255,140,0,.1); }
+    .login-box h2 { font-size: 1.25rem; font-weight: 600; color: #fff; margin: 0 0 0.25rem 0; }
+    .login-box .subtitle { color: #6b7280; font-size: 0.875rem; margin-bottom: 1.5rem; }
+    .login-box label { display: block; font-size: 0.875rem; color: #9ca3af; margin-bottom: 0.5rem; }
+    .login-box input[type="email"], .login-box input[type="password"] { width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #2a2a2a; background: #111; color: #fff; font-size: 1rem; margin-bottom: 1rem; box-sizing: border-box; }
+    .login-box input:focus { outline: none; border-color: #FF8C00; }
+    .login-box .btn-signin { width: 100%; padding: 0.75rem 1rem; background: #FF8C00; color: #000; font-weight: 700; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 1rem; }
+    .login-box .btn-signin:hover { background: #e67e00; }
+    .login-box .demo-hint { text-align: center; color: #6b7280; font-size: 0.75rem; margin-top: 1rem; }
+    .login-box .login-err { color: #f59e0b; font-size: 0.875rem; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body class="grid-bg">
+  <div id="view-login" class="view login-page">
+    <div id="file-origin-warn" style="display:none; background:#7f1d1d; color:#fecaca; padding:0.5rem 1rem; margin-bottom:1rem; border-radius:0.5rem; font-size:0.875rem; max-width:22rem;">
+      Open <strong>http://localhost:8000</strong> in your browser (do not open the HTML file from disk). Start the backend first: <code style="background:#450a0a; padding:0.2rem 0.4rem;">cd FruityVisionAI/backend && python main.py</code>
+    </div>
+    <div class="logo" style="margin-bottom: 2rem; font-size: 1.5rem;">ClearScan <span>AI</span></div>
+    <div class="login-box">
+      <h2>Sign in</h2>
+      <p class="subtitle">Fruit Quality Grading System</p>
+      <form id="login-form">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" placeholder="demo@clearscan.ai" autocomplete="email" />
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+        <p id="login-err" class="login-err hidden"></p>
+        <button type="submit" class="btn-signin">Sign in</button>
+      </form>
+      <p class="demo-hint">Demo: demo@clearscan.ai / demo123</p>
+    </div>
+  </div>
+
+  <div id="app-authenticated" class="hidden">
+  <div id="backend-warn" style="display:none; background:#7f1d1d; color:#fecaca; padding:0.5rem 1rem; text-align:center; font-size:0.875rem;">
+    Backend not running. Run: <code style="background:#450a0a; padding:0.2rem 0.5rem; border-radius:4px;">cd FruityVisionAI/backend && python3 main.py</code> then refresh.
+  </div>
+  <div class="app-shell">
+  <header>
+    <div class="header-inner">
+      <div class="logo">ClearScan <span>AI</span></div>
+      <div class="nav-tabs">
+        <button type="button" id="nav-scan" class="nav-tab active">Scan</button>
+        <button type="button" id="nav-history" class="nav-tab">History <span id="history-badge" style="display:none; margin-left:0.25rem; background:#FF8C00; color:#000; font-size:0.7rem; padding:0.1rem 0.4rem; border-radius:999px;">0</span></button>
+      </div>
+      <button type="button" id="btn-logout" class="btn-logout" title="Log out">Log out</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="view-camera" class="view">
+      <h1 class="page-title">Scan fruit</h1>
+      <div class="camera-wrap">
+        <video id="video" autoplay playsinline muted style="display:none"></video>
+        <div id="camera-placeholder" class="camera-placeholder">
+          <span id="camera-placeholder-text">Starting camera…</span>
+          <button type="button" id="btn-camera-try-again" class="btn-camera-try-again hidden">Ask for camera again</button>
+          <p id="camera-reset-hint" class="camera-reset-hint hidden">If you previously blocked the camera: click the lock (or “i”) icon in the address bar → Site settings or Camera → set Camera to Allow or Ask → reload the page or click “Ask for camera again”.</p>
+        </div>
+      </div>
+      <button type="button" id="btn-capture" class="btn-capture" disabled>
+        &#128269; Capture
+      </button>
+      <div class="upload-section">
+        <p class="or">— or —</p>
+        <div id="dropzone" class="dropzone">
+          <div class="icon">&#128190;</div>
+          <p class="title">Upload from computer</p>
+          <p class="hint">Drop an image here or click to browse</p>
+          <input type="file" id="file-input" accept="image/*" />
+        </div>
+      </div>
+    </div>
+
+    <div id="view-scanning" class="view hidden">
+      <div class="camera-wrap" style="max-height:70vh">
+        <img id="scan-img" src="" alt="" style="width:100%;height:100%;object-fit:cover" />
+        <div class="laser"></div>
+        <div class="scan-overlay"><span>Scanning…</span></div>
+      </div>
+    </div>
+
+    <div id="view-result" class="view hidden">
+      <h1 class="page-title">Grade</h1>
+      <div class="result-card grade-card" style="margin-bottom:1rem;">
+        <div class="ripeness-circle-wrap">
+          <div class="ripeness-circle">
+            <span class="stage" id="result-stage">–</span>
+            <span class="confidence" id="result-confidence">–</span>
+          </div>
+        </div>
+        <p id="result-error" class="error hidden"></p>
+      </div>
+      <div id="demo-mode-banner" class="hidden" style="background:rgba(255,140,0,0.15); border:1px solid #FF8C00; border-radius:0.5rem; padding:1rem; margin-bottom:1rem; font-size:0.875rem;">
+        <strong style="color:#FF8C00">Data not trained – grading is demo only.</strong>
+        <p style="margin:0.5rem 0 0 0; color:#9ca3af;">To enable real grading: put fruit images in a folder with subfolders <code>Unripe</code>, <code>Semi-ripe</code>, <code>Ripe</code>. Then in a terminal run:</p>
+        <code style="display:block; margin-top:0.5rem; padding:0.5rem; background:#111; border-radius:4px; font-size:0.8rem; color:#FF8C00;">cd FruityVisionAI && pip install -r requirements-train.txt && python export_dataset_features.py /path/to/your/fruit_dataset</code>
+        <p style="margin:0.5rem 0 0 0; color:#9ca3af;">Restart the backend after exporting. See TRAINING.md in the project for details.</p>
+      </div>
+      <div class="result-card" style="margin-bottom:1rem;">
+        <div class="label">Your capture</div>
+        <div class="img-wrap" style="aspect-ratio:4/3; max-height:40vh;">
+          <img id="result-captured" src="" alt="Your capture" style="width:100%; height:100%; object-fit:contain;" />
+        </div>
+      </div>
+      <button type="button" id="btn-new" class="btn-new">&#128269; Analyze New Sample</button>
+    </div>
+
+    <div id="view-history" class="view hidden">
+      <h1 class="page-title">History</h1>
+      <ul class="history-list" id="history-list"></ul>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Main">
+    <button type="button" id="bottom-nav-scan" class="active" aria-label="Scan">&#128269; Scan</button>
+    <button type="button" id="bottom-nav-history" aria-label="History">&#128203; History</button>
+  </nav>
+  </div>
+  </div>
+
+  <script>
+    var API = (window.location.origin && (window.location.protocol === 'http:' || window.location.protocol === 'https:'))
+      ? window.location.origin
+      : 'http://localhost:8000';
+    if (window.location.protocol !== 'http:' && window.location.protocol !== 'https:') {
+      var w = document.getElementById('file-origin-warn');
+      if (w) w.style.display = 'block';
+    }
+    var stream = null;
+    var historyList = [];
+    var isLoggedIn = false;
+
+    function setLoggedIn(loggedIn) {
+      isLoggedIn = loggedIn;
+      document.getElementById('view-login').classList.toggle('hidden', loggedIn);
+      document.getElementById('app-authenticated').classList.toggle('hidden', !loggedIn);
+      if (loggedIn) { show('view-camera'); checkBackend(); }
+    }
+
+    document.getElementById('login-form').onsubmit = function(e) {
+      e.preventDefault();
+      var email = (document.getElementById('login-email').value || '').trim().toLowerCase();
+      var password = document.getElementById('login-password').value || '';
+      var errEl = document.getElementById('login-err');
+      if (email === 'demo@clearscan.ai' || (email.length > 0 && password.length > 0)) {
+        errEl.classList.add('hidden');
+        setLoggedIn(true);
+      } else {
+        errEl.textContent = 'Use demo@clearscan.ai / demo123 to sign in.';
+        errEl.classList.remove('hidden');
+      }
+    };
+
+    document.getElementById('btn-logout').onclick = function() {
+      setLoggedIn(false);
+      document.getElementById('login-email').value = '';
+      document.getElementById('login-password').value = '';
+    };
+
+    function checkBackend() {
+      fetch(API + '/health', { method: 'GET' }).then(function() {
+        var el = document.getElementById('backend-warn');
+        if (el) el.style.display = 'none';
+      }).catch(function() {
+        var el = document.getElementById('backend-warn');
+        if (el) el.style.display = 'block';
+      });
+    }
+    setInterval(checkBackend, 8000);
+    checkBackend();
+
+    function setNavActive(which) {
+      document.querySelectorAll('.nav-tab, .bottom-nav button').forEach(function(b) { b.classList.remove('active'); });
+      var scan = document.getElementById('nav-scan'); var bScan = document.getElementById('bottom-nav-scan');
+      var hist = document.getElementById('nav-history'); var bHist = document.getElementById('bottom-nav-history');
+      if (which === 'history') { if (hist) hist.classList.add('active'); if (bHist) bHist.classList.add('active'); }
+      else { if (scan) scan.classList.add('active'); if (bScan) bScan.classList.add('active'); }
+    }
+    function show(id) {
+      if (!isLoggedIn) return;
+      document.querySelectorAll('#app-authenticated .view').forEach(function(el) { el.classList.add('hidden'); });
+      var el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+      if (id === 'view-history') setNavActive('history');
+      else setNavActive('scan');
+    }
+    function updateHistoryBadge() {
+      var badge = document.getElementById('history-badge');
+      if (badge) { badge.textContent = historyList.length; badge.style.display = historyList.length ? 'inline' : 'none'; }
+    }
+
+    var video = document.getElementById('video');
+    var placeholder = document.getElementById('camera-placeholder');
+    var btnCapture = document.getElementById('btn-capture');
+
+    function requestCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+      var textEl = document.getElementById('camera-placeholder-text');
+      var btnAgain = document.getElementById('btn-camera-try-again');
+      var hintEl = document.getElementById('camera-reset-hint');
+      textEl.textContent = 'Requesting camera…';
+      if (btnAgain) btnAgain.classList.add('hidden');
+      if (hintEl) hintEl.classList.add('hidden');
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
+        .then(function(s) {
+          if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+          stream = s;
+          video.srcObject = s;
+          video.style.display = 'block';
+          placeholder.style.display = 'none';
+          video.onloadedmetadata = function() { btnCapture.disabled = false; };
+        })
+        .catch(function(err) {
+          placeholder.style.display = 'flex';
+          video.style.display = 'none';
+          textEl.textContent = err.message || 'Camera access denied';
+          if (btnAgain) { btnAgain.classList.remove('hidden'); btnAgain.textContent = 'Ask for camera again'; }
+          if (hintEl) hintEl.classList.remove('hidden');
+        });
+    }
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      requestCamera();
+    } else {
+      document.getElementById('camera-placeholder-text').textContent = 'Camera not available';
+    }
+    document.getElementById('btn-camera-try-again').onclick = function() { requestCamera(); };
+
+    function runScan(blob) {
+      var url = URL.createObjectURL(blob);
+      document.getElementById('scan-img').src = url;
+      show('view-scanning');
+      setTimeout(function() {
+        var fd = new FormData();
+        fd.append('file', blob, blob.name || 'image.jpg');
+        fetch(API + '/compare', { method: 'POST', body: fd })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            historyList.unshift({ url: url, result: data });
+            updateHistoryBadge();
+            var rc = document.getElementById('result-captured'); if (rc) rc.src = url;
+            var rs = document.getElementById('result-stage'); if (rs) rs.textContent = data.ripeness_stage || '–';
+            var rconf = document.getElementById('result-confidence'); if (rconf) rconf.textContent = ((data.confidence || 0) * 100).toFixed(1) + '%';
+            var errEl = document.getElementById('result-error');
+            if (errEl) { if (data.error) { errEl.textContent = data.error; errEl.classList.remove('hidden'); } else { errEl.classList.add('hidden'); } }
+            var demoBanner = document.getElementById('demo-mode-banner');
+            if (demoBanner) demoBanner.classList.toggle('hidden', !data.demo_mode);
+            show('view-result');
+          })
+          .catch(function(err) {
+            var rc = document.getElementById('result-captured'); if (rc) rc.src = url;
+            var rs = document.getElementById('result-stage'); if (rs) rs.textContent = 'Error';
+            var rconf = document.getElementById('result-confidence'); if (rconf) rconf.textContent = '–';
+            var errMsg = err.message || '';
+            if (errMsg.indexOf('fetch') !== -1 || !errMsg) errMsg = 'Backend not running. In a terminal run: cd FruityVisionAI/backend && python main.py then refresh.';
+            var errEl = document.getElementById('result-error');
+            if (errEl) { errEl.textContent = errMsg; errEl.classList.remove('hidden'); }
+            var demoBanner = document.getElementById('demo-mode-banner');
+            if (demoBanner) demoBanner.classList.add('hidden');
+            historyList.unshift({ url: url, result: { ripeness_stage: 'Error', confidence: 0 } });
+            updateHistoryBadge();
+            show('view-result');
+          });
+      }, 2500);
+    }
+
+    btnCapture.onclick = function() {
+      if (video.readyState < 2) return;
+      var canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      canvas.toBlob(function(blob) {
+        if (!blob) return;
+        runScan(blob);
+      }, 'image/jpeg', 0.92);
+    };
+
+    var fileInput = document.getElementById('file-input');
+    var dropzone = document.getElementById('dropzone');
+    dropzone.onclick = function(e) { if (!e.target.closest('input')) fileInput.click(); };
+    fileInput.onchange = function() {
+      var f = this.files && this.files[0];
+      if (f && f.type.indexOf('image') !== -1) runScan(f);
+      this.value = '';
+    };
+    dropzone.ondragover = function(e) { e.preventDefault(); dropzone.classList.add('dragover'); };
+    dropzone.ondragleave = function() { dropzone.classList.remove('dragover'); };
+    dropzone.ondrop = function(e) {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f && f.type.indexOf('image') !== -1) runScan(f);
+    };
+
+    document.getElementById('btn-new').onclick = function() {
+      show('view-camera');
+    };
+
+    function showHistory() {
+      var list = document.getElementById('history-list');
+      if (list) list.innerHTML = historyList.length ? historyList.map(function(item) {
+        return '<li><img src="' + item.url + '" alt="" /><div><strong>' + (item.result.ripeness_stage || '–') + '</strong><br><span style="color:#6b7280;font-size:0.875rem">' + ((item.result.confidence || 0) * 100).toFixed(0) + '% confidence</span></div></li>';
+      }).join('') : '<li style="color:#6b7280">No scans yet.</li>';
+      show('view-history');
+    }
+    document.getElementById('nav-history').onclick = showHistory;
+    document.getElementById('bottom-nav-history').onclick = showHistory;
+    document.getElementById('nav-scan').onclick = function() { show('view-camera'); };
+    document.getElementById('bottom-nav-scan').onclick = function() { show('view-camera'); };
+
+    window.addEventListener('beforeunload', function() {
+      if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --clearscan-black: #000000;
+  --clearscan-orange: #FF8C00;
+}
+
+body {
+  @apply bg-black text-gray-100;
+  background-color: var(--clearscan-black);
+}
+
+@keyframes scan {
+  0% {
+    top: 0;
+    opacity: 1;
+  }
+  50% {
+    top: 100%;
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0.3;
+  }
+}
+
+.animate-scan {
+  animation: scan 2.5s ease-in-out forwards;
+}

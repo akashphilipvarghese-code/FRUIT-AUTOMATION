@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model GradeRecord {
+  id                    String   @id @default(cuid())
+  grade                 String
+  overallScore          Int
+  size                  Int
+  color                 Int
+  ripeness              Int
+  defects               Int
+  imageBase64           String?
+  timestamp             DateTime @default(now())
+  fruitType             String
+  surfaceDefectPercentage Int
+  area                  Int
+  perimeter             Int
+}

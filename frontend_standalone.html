@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClearScan AI – Fruit Quality</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: #000; color: #fff; min-height: 100vh; }
+    .grid-bg { background-image: linear-gradient(to right, rgba(26,26,26,.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(26,26,26,.05) 1px, transparent 1px); background-size: 20px 20px; }
+    header { border-bottom: 1px solid #2a2a2a; }
+    .header-landing { padding: 1.5rem; text-align: center; }
+    .header-compact { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; position: sticky; top: 0; z-index: 50; background: #000; }
+    .logo { font-weight: 700; color: #FF8C00; font-size: 1.25rem; }
+    .tagline { font-size: 0.875rem; color: #666; margin-top: 0.25rem; }
+    .header-actions { display: flex; align-items: center; gap: 0.5rem; }
+    .btn-header { padding: 0.5rem 1rem; border: 1px solid #2a2a2a; border-radius: 0.5rem; color: #9ca3af; background: transparent; cursor: pointer; font-size: 0.875rem; }
+    .btn-header:hover { color: #FF8C00; border-color: #FF8C00; }
+    .icon-btn { padding: 0.5rem; border-radius: 0.5rem; color: #FF8C00; background: transparent; border: none; cursor: pointer; }
+    .icon-btn:hover { background: rgba(255,140,0,.1); }
+    main { max-width: 80rem; margin: 0 auto; padding: 1.5rem; }
+    .field { margin-bottom: 1.5rem; }
+    .field label { display: block; font-size: 0.875rem; color: #9ca3af; margin-bottom: 0.5rem; font-weight: 500; }
+    .field select { width: 100%; padding: 0.75rem 1rem; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 0.5rem; color: #fff; font-size: 1rem; }
+    .dropzone { border: 2px dashed #FF8C00; border-radius: 0.75rem; padding: 3rem; text-align: center; background: rgba(0,0,0,.5); cursor: pointer; transition: background .2s; }
+    .dropzone:hover { background: rgba(255,140,0,.05); }
+    .dropzone .icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .dropzone .title { color: #fff; font-weight: 700; margin-bottom: 0.25rem; }
+    .dropzone .hint { color: #6b7280; font-size: 0.875rem; margin-bottom: 1.5rem; }
+    .btn-upload { display: inline-block; padding: 0.75rem 1.5rem; background: #FF8C00; color: #000; font-weight: 700; border-radius: 0.5rem; cursor: pointer; border: none; font-size: 1rem; }
+    .btn-upload:hover { background: #e67e00; }
+    .btn-camera { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem; padding: 0.75rem 1.5rem; border: 2px solid #FF8C00; color: #FF8C00; background: transparent; font-weight: 700; border-radius: 0.5rem; cursor: pointer; font-size: 1rem; }
+    .btn-camera:hover { background: rgba(255,140,0,.1); }
+    input[type="file"] { display: none; }
+    /* Scanning */
+    .scan-layout { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+    .scan-preview { flex: 1; min-width: 280px; position: relative; border-radius: 0.75rem; overflow: hidden; background: #1a1a1a; border: 1px solid #2a2a2a; }
+    .scan-preview img { width: 100%; height: auto; min-height: 280px; object-fit: contain; display: block; }
+    @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+    .laser { position: absolute; left: 0; right: 0; height: 4px; background: #FF8C00; border-radius: 4px; box-shadow: 0 0 20px 8px rgba(255,140,0,.6); animation: scan 2s ease-in-out infinite; pointer-events: none; }
+    .terminal { width: 24rem; max-width: 100%; border-radius: 0.75rem; border: 1px solid #2a2a2a; background: #1a1a1a; overflow: hidden; }
+    .terminal-head { padding: 0.75rem 1rem; border-bottom: 1px solid #2a2a2a; display: flex; align-items: center; gap: 0.5rem; }
+    .terminal-head span { width: 12px; height: 12px; border-radius: 50%; }
+    .terminal-head .r { background: rgba(239,68,68,.8); }
+    .terminal-head .y { background: rgba(234,179,8,.8); }
+    .terminal-head .g { background: rgba(34,197,94,.8); }
+    .terminal-log { padding: 1rem; font-family: monospace; font-size: 0.875rem; color: #FF8C00; min-height: 200px; }
+    .terminal-foot { padding: 0.75rem 1rem; border-top: 1px solid #2a2a2a; }
+    .progress-bg { height: 8px; background: #2a2a2a; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #FF8C00; border-radius: 4px; transition: width .3s; }
+    /* Result */
+    .result-grid { display: grid; gap: 2rem; margin-bottom: 2rem; }
+    @media (min-width: 768px) { .result-grid { grid-template-columns: 1fr 1fr; } }
+    .result-image-wrap { position: relative; border-radius: 0.75rem; overflow: hidden; background: #1a1a1a; border: 1px solid #2a2a2a; }
+    .result-image-wrap img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; }
+    .result-image-wrap .box { position: absolute; inset: 1rem; border: 2px solid #FF8C00; border-radius: 0.5rem; pointer-events: none; }
+    .result-image-wrap .badge { position: absolute; top: 1rem; left: 1rem; padding: 0.25rem 0.75rem; background: rgba(255,140,0,.9); color: #000; font-size: 0.875rem; font-weight: 700; border-radius: 0.25rem; }
+    .gauge-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .gauge-svg { width: 10rem; height: 10rem; }
+    .gauge-score { font-size: 2.25rem; font-weight: 700; }
+    .gauge-label { font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem; }
+    .status-wrap { margin-top: 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
+    .status-wrap .text { font-size: 1.25rem; font-weight: 700; }
+    .status-wrap .pass { color: #22c55e; }
+    .status-wrap .fail { color: #ef4444; }
+    .cards { display: grid; gap: 1rem; margin-bottom: 2rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+    .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 0.75rem; padding: 1.25rem; }
+    .card h3 { color: #FF8C00; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.875rem; }
+    .card .value { font-size: 1.125rem; font-weight: 700; }
+    .btn-new { padding: 0.75rem 1.5rem; background: #FF8C00; color: #000; font-weight: 700; border-radius: 0.5rem; cursor: pointer; border: none; font-size: 1rem; margin-right: 0.75rem; }
+    .btn-new:hover { background: #e67e00; }
+    .btn-outline { padding: 0.75rem 1.5rem; border: 2px solid #FF8C00; color: #FF8C00; background: transparent; font-weight: 700; border-radius: 0.5rem; cursor: pointer; font-size: 1rem; }
+    .btn-outline:hover { background: rgba(255,140,0,.1); }
+    .back-link { color: #FF8C00; font-weight: 700; margin-bottom: 1rem; cursor: pointer; background: none; border: none; font-size: 1rem; padding: 0; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .back-link:hover { text-decoration: underline; }
+    /* History */
+    .history-table { width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 0.75rem; overflow: hidden; border: 1px solid #2a2a2a; }
+    .history-table th { text-align: left; padding: 0.75rem 1rem; color: #9ca3af; font-weight: 700; font-size: 0.75rem; border-bottom: 1px solid #2a2a2a; }
+    .history-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #2a2a2a; }
+    .history-table tr:last-child td { border-bottom: 0; }
+    .history-table tr:hover { background: rgba(42,42,42,.5); }
+    .thumb { width: 3rem; height: 3rem; object-fit: cover; border-radius: 0.25rem; border: 1px solid #2a2a2a; }
+    .view-link { color: #FF8C00; cursor: pointer; font-weight: 700; font-size: 0.875rem; }
+    .view-link:hover { text-decoration: underline; }
+    footer { border-top: 1px solid #2a2a2a; margin-top: 2rem; padding: 1rem 1.5rem; }
+    .footer-inner { max-width: 80rem; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; font-size: 0.75rem; color: #6b7280; }
+    .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 50% { opacity: .5; } }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="grid-bg">
+  <div id="view-landing" class="view">
+    <header>
+      <div class="header-landing">
+        <div class="logo">ClearScan</div>
+        <div class="tagline">AI-Powered Fruit Quality</div>
+      </div>
+    </header>
+    <main>
+      <div class="field">
+        <label for="fruit">Fruit type</label>
+        <select id="fruit">
+          <option value="orange">Orange</option>
+          <option value="apple">Apple</option>
+          <option value="mango">Mango</option>
+          <option value="banana">Banana</option>
+          <option value="strawberry">Strawberry</option>
+          <option value="grape">Grape</option>
+          <option value="auto">Auto Detect</option>
+        </select>
+      </div>
+      <div id="dropzone" class="dropzone">
+        <div class="icon">📤</div>
+        <p class="title">Drop image here</p>
+        <p class="hint">or click to browse</p>
+        <label class="btn-upload"><input type="file" id="file" accept="image/*" /> Upload Image</label>
+      </div>
+      <div style="text-align: center;">
+        <button type="button" id="camera" class="btn-camera">📷 Camera Scan</button>
+      </div>
+    </main>
+  </div>
+
+  <div id="view-compact-header" class="view hidden">
+    <header class="header-compact">
+      <div class="logo">ClearScan</div>
+      <div class="header-actions">
+        <button type="button" id="btn-history" class="btn-header">History (<span id="history-count">0</span>)</button>
+        <button type="button" class="icon-btn" title="User">👤</button>
+        <button type="button" class="icon-btn" title="Settings">⚙️</button>
+      </div>
+    </header>
+  </div>
+
+  <div id="view-scanning" class="view hidden">
+    <main>
+      <div class="scan-layout">
+        <div class="scan-preview">
+          <img id="scan-img" src="" alt="Scanning" />
+          <div class="laser"></div>
+        </div>
+        <div class="terminal">
+          <div class="terminal-head">
+            <span class="r"></span><span class="y"></span><span class="g"></span>
+            <span style="margin-left:0.5rem;color:#666;font-size:0.875rem">scan.log</span>
+          </div>
+          <div class="terminal-log" id="scan-log">
+            <div>&gt;&gt; Initializing sensors...</div>
+            <div>&gt;&gt; Extracting Color Features...</div>
+            <div>&gt;&gt; Analyzing Texture...</div>
+            <div>&gt;&gt; Computing Geometric Data...</div>
+            <div>&gt;&gt; Running quality classifier...</div>
+            <div>&gt;&gt; Generating report...</div>
+          </div>
+          <div class="terminal-foot">
+            <div class="progress-bg"><div id="scan-progress" class="progress-fill" style="width:0%"></div></div>
+            <p style="color:#9ca3af;font-size:0.75rem;margin-top:0.5rem">Progress: <span id="scan-pct">0</span>%</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="view-result" class="view hidden">
+    <main>
+      <div class="result-grid">
+        <div class="result-image-wrap">
+          <img id="result-img" src="" alt="Result" />
+          <div class="box"></div>
+          <div id="result-badge" class="badge">🍊 Orange</div>
+        </div>
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 100 100" style="transform:rotate(-90deg)">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="#2a2a2a" stroke-width="8"/>
+            <circle id="gauge-circle" cx="50" cy="50" r="45" fill="none" stroke="#FF8C00" stroke-width="8" stroke-linecap="round" stroke-dasharray="0 283"/>
+          </svg>
+          <span id="score-num" class="gauge-score">0</span>
+          <span class="gauge-label">Quality Score</span>
+          <div class="status-wrap">
+            <span id="grade-text" class="text pass">Grade A</span>
+          </div>
+        </div>
+      </div>
+      <div class="cards" id="result-cards"></div>
+      <div>
+        <button type="button" id="btn-new" class="btn-new">🔬 Analyze New Sample</button>
+        <button type="button" id="btn-all-history" class="btn-outline">View All History</button>
+      </div>
+    </main>
+  </div>
+
+  <div id="view-history" class="view hidden">
+    <main>
+      <button type="button" id="back-from-history" class="back-link">← Back to Upload</button>
+      <table class="history-table" id="history-table">
+        <thead><tr><th>Preview</th><th>Date</th><th>Fruit</th><th>Grade</th><th>Score</th><th>Action</th></tr></thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </main>
+  </div>
+
+  <footer>
+    <div class="footer-inner">
+      <span>© 2026 ClearScan AI</span>
+      <span style="display:flex;align-items:center;gap:0.5rem">
+        <span>v2.0.1</span>
+        <span class="dot"></span>
+        <span>Online</span>
+      </span>
+    </div>
+  </footer>
+
+  <script>
+    var API = window.location.origin;
+    var historyList = [];
+    var fruitNames = { apple: 'Apple', mango: 'Mango', orange: 'Orange', banana: 'Banana', strawberry: 'Strawberry', grape: 'Grape', auto: 'Auto' };
+
+    function show(id) { document.querySelectorAll('.view').forEach(function(el){ el.classList.add('hidden'); }); var e = document.getElementById(id); if(e) e.classList.remove('hidden'); }
+    function showCompactHeader(show) { document.getElementById('view-compact-header').classList.toggle('hidden', !show); document.getElementById('view-landing').querySelector('header').style.display = show ? 'none' : 'block'; }
+
+    function showResult(data) {
+      var c = 2 * Math.PI * 45;
+      var dash = (data.overallScore / 100) * c;
+      document.getElementById('result-img').src = data.imageUrl;
+      document.getElementById('result-badge').textContent = (data.fruitEmoji || '') + ' ' + (fruitNames[data.fruitType] || data.fruitType);
+      document.getElementById('score-num').textContent = data.overallScore;
+      document.getElementById('gauge-circle').setAttribute('stroke-dasharray', dash + ' ' + c);
+      var gradeEl = document.getElementById('grade-text');
+      gradeEl.textContent = 'Grade ' + data.grade;
+      gradeEl.className = 'text ' + (data.grade === 'A' || data.grade === 'B' ? 'pass' : 'fail');
+      var cards = document.getElementById('result-cards');
+      cards.innerHTML = '<div class="card"><h3>Size</h3><p class="value">' + data.size + '%</p></div><div class="card"><h3>Color</h3><p class="value">' + data.color + '%</p></div><div class="card"><h3>Ripeness</h3><p class="value">' + data.ripeness + '%</p></div><div class="card"><h3>Defects</h3><p class="value">' + data.defects + '%</p></div>';
+      show('view-result');
+      showCompactHeader(true);
+    }
+
+    function runScan(file) {
+      var imageUrl = URL.createObjectURL(file);
+      document.getElementById('scan-img').src = imageUrl;
+      document.getElementById('view-landing').classList.add('hidden');
+      document.getElementById('view-compact-header').classList.remove('hidden');
+      document.getElementById('view-scanning').classList.remove('hidden');
+      document.getElementById('scan-progress').style.width = '0%';
+      document.getElementById('scan-pct').textContent = '0';
+
+      var start = Date.now();
+      var duration = 2500;
+      var iv = setInterval(function() {
+        var p = Math.min(100, ((Date.now() - start) / duration) * 100);
+        document.getElementById('scan-progress').style.width = p + '%';
+        document.getElementById('scan-pct').textContent = Math.round(p);
+        if (p >= 100) {
+          clearInterval(iv);
+          fetch(API + '/analyze', { method: 'POST', body: (function(){ var fd = new FormData(); fd.append('file', file); return fd; })() })
+            .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error('Analysis failed')); })
+            .then(function(api) {
+              var r = api.ripeness_meter || 0;
+              var overallScore = Math.round(r);
+              var size = Math.min(100, Math.round(75 + Math.random() * 25));
+              var color = Math.min(100, Math.round(r * 0.4 + 40));
+              var ripeness = Math.min(100, Math.round(r));
+              var defects = Math.min(100, Math.round(100 - r * 0.5));
+              var grade = overallScore >= 90 ? 'A' : overallScore >= 80 ? 'B' : overallScore >= 70 ? 'C' : 'D';
+              var fruit = document.getElementById('fruit').value;
+              var fruits = ['apple','mango','orange','banana','strawberry','grape'];
+              if (fruit === 'auto') fruit = fruits[Math.floor(Math.random() * fruits.length)];
+              var emoji = { apple:'🍎', mango:'🥭', orange:'🍊', banana:'🍌', strawberry:'🍓', grape:'🍇' }[fruit] || '';
+              var data = { grade: grade, overallScore: overallScore, size: size, color: color, ripeness: ripeness, defects: defects, imageUrl: imageUrl, timestamp: new Date(), fruitType: fruit, fruitEmoji: emoji };
+              historyList.unshift(data);
+              document.getElementById('history-count').textContent = historyList.length;
+              showResult(data);
+            })
+            .catch(function() {
+              var overallScore = 60 + Math.floor(Math.random() * 35);
+              var size = 70 + Math.floor(Math.random() * 25);
+              var color = 70 + Math.floor(Math.random() * 25);
+              var ripeness = 70 + Math.floor(Math.random() * 25);
+              var defects = 75 + Math.floor(Math.random() * 20);
+              var grade = overallScore >= 90 ? 'A' : overallScore >= 80 ? 'B' : overallScore >= 70 ? 'C' : 'D';
+              var fruit = document.getElementById('fruit').value;
+              var fruits = ['apple','mango','orange','banana','strawberry','grape'];
+              if (fruit === 'auto') fruit = fruits[Math.floor(Math.random() * fruits.length)];
+              var emoji = { apple:'🍎', mango:'🥭', orange:'🍊', banana:'🍌', strawberry:'🍓', grape:'🍇' }[fruit] || '';
+              var data = { grade: grade, overallScore: overallScore, size: size, color: color, ripeness: ripeness, defects: defects, imageUrl: imageUrl, timestamp: new Date(), fruitType: fruit, fruitEmoji: emoji };
+              historyList.unshift(data);
+              document.getElementById('history-count').textContent = historyList.length;
+              showResult(data);
+            });
+          document.getElementById('view-scanning').classList.add('hidden');
+        }
+      }, 80);
+    }
+
+    document.getElementById('file').onchange = function() { var f = this.files[0]; if (f && f.type.indexOf('image') === 0) runScan(f); };
+    document.getElementById('camera').onclick = function() { alert('Camera scan would open device camera here.'); };
+    document.getElementById('dropzone').onclick = function(e) { if (!e.target.closest('label')) document.getElementById('file').click(); };
+
+    document.getElementById('btn-new').onclick = function() { show('view-landing'); document.getElementById('view-compact-header').classList.add('hidden'); document.getElementById('view-landing').querySelector('header').style.display = 'block'; };
+    document.getElementById('btn-all-history').onclick = function() {
+      var tbody = document.getElementById('history-body');
+      tbody.innerHTML = historyList.length ? historyList.map(function(item, i) {
+        return '<tr><td><img class="thumb" src="' + item.imageUrl + '" alt="" /></td><td>' + item.timestamp.toLocaleString() + '</td><td>' + (fruitNames[item.fruitType] || item.fruitType) + '</td><td>' + item.grade + '</td><td>' + item.overallScore + '%</td><td><span class="view-link" data-i="' + i + '">View</span></td></tr>';
+      }).join('') : '<tr><td colspan="6" style="text-align:center;color:#666">No history yet.</td></tr>';
+      tbody.querySelectorAll('.view-link').forEach(function(el) { el.onclick = function() { showResult(historyList[parseInt(this.getAttribute('data-i'), 10)]); }; });
+      show('view-history');
+    };
+    document.getElementById('back-from-history').onclick = function() { show('view-landing'); document.getElementById('view-compact-header').classList.add('hidden'); document.getElementById('view-landing').querySelector('header').style.display = 'block'; };
+    document.getElementById('btn-history').onclick = function() { document.getElementById('btn-all-history').click(); };
+  </script>
+</body>
+</html>

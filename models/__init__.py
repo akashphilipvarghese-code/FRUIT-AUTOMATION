@@ -1,0 +1,1 @@
+# FruityVision AI - Model Logic

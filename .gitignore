@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.env
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Node
+node_modules/
+.next/
+.nuxt/
+out/
+.npm
+*.log
+
+# Data & models (regenerate with export_dataset_features.py)
+backend/data/*.npz
+*.h5
+*.keras
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE & OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs & temp
+*.log
+.cache/
+tmp/
+temp/
