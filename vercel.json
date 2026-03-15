@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd clearscan-app && npm install",
   "buildCommand": "cd clearscan-app && npm run build",
   "outputDirectory": "clearscan-app/dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
