@@ -21,7 +21,7 @@ import { ScanningAnimation } from "./components/scanning-animation";
 import { GradeResult, type GradeData } from "./components/grade-result";
 import { GradingHistory } from "./components/grading-history";
 import { ClearScanLogo } from "./components/clearscan-logo";
-import { Scan, User, Settings, ArrowLeft, LogOut } from "lucide-react";
+import { User, Settings, ArrowLeft, LogOut } from "lucide-react";
 import { Button } from "./components/ui/button";
 import type { FruitType } from "./types/fruit-types";
 
@@ -33,6 +33,7 @@ export default function App() {
   const [selectedFruitType, setSelectedFruitType] = useState<FruitType>("auto");
   const [showHistory, setShowHistory] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
+  const [lastImageFile, setLastImageFile] = useState<File | undefined>(undefined);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
@@ -48,6 +49,7 @@ export default function App() {
   const gradeImage = async (file: File) => {
     const imageUrl = URL.createObjectURL(file);
     setUploadedImageUrl(imageUrl);
+    setLastImageFile(file);
     setIsGrading(true);
 
     await new Promise((resolve) => setTimeout(resolve, 2500));
@@ -83,7 +85,23 @@ export default function App() {
       surfaceDefectPercentage: Math.floor(Math.random() * 15) + 2,
       area: Math.floor(Math.random() * 50) + 25,
       perimeter: Math.floor(Math.random() * 30) + 15,
+      location: undefined, // Set below if geolocation available
     };
+    // Capture device GPS for proximity queries (GeoPoint in Firestore)
+    if (navigator.geolocation) {
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 })
+        );
+        gradeData.location = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        };
+      } catch {
+        /* ignore */
+      }
+    }
 
     setCurrentGrade(gradeData);
     setHistory((prev) => [gradeData, ...prev]);
@@ -97,10 +115,12 @@ export default function App() {
   const handleReset = () => {
     setCurrentGrade(null);
     setUploadedImageUrl("");
+    setLastImageFile(undefined);
   };
 
   const handleHistorySelect = (item: GradeData) => {
     setCurrentGrade(item);
+    setLastImageFile(undefined);
     setShowHistory(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -184,29 +204,13 @@ export default function App() {
         ) : isGrading ? (
           <ScanningAnimation imageUrl={uploadedImageUrl} />
         ) : currentGrade ? (
-          <div className="space-y-6 sm:space-y-8">
-            <GradeResult data={currentGrade} />
-            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-              <Button 
-                onClick={handleReset} 
-                size="lg"
-                className="bg-[#FF8C00] hover:bg-[#FF8C00]/90 text-black font-medium shadow-lg shadow-[#FF8C00]/30 w-full sm:w-auto"
-              >
-                <Scan className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                Analyze New Sample
-              </Button>
-              {history.length > 1 && (
-                <Button 
-                  onClick={() => setShowHistory(true)} 
-                  size="lg"
-                  variant="outline"
-                  className="border-2 border-[#FF8C00] text-[#FF8C00] hover:bg-[#FF8C00]/10 bg-transparent w-full sm:w-auto"
-                >
-                  View All History
-                </Button>
-              )}
-            </div>
-          </div>
+          <GradeResult
+            data={currentGrade}
+            imageFile={lastImageFile}
+            onAnalyzeNewSample={handleReset}
+            onFindBuyers={() => setShowHistory(true)}
+            onExport={() => window.print?.() ?? alert("Export: save or print this report.")}
+          />
         ) : (
           <UploadZone 
             onFileSelect={handleFileSelect}

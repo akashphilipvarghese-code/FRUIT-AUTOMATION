@@ -13,7 +13,7 @@ interface GradingHistoryProps {
   isAdmin?: boolean;
 }
 
-export function GradingHistory({ history, onSelectItem, isAdmin = false }: GradingHistoryProps) {
+export function GradingHistory({ history, onSelectItem, isAdmin: _isAdmin = false }: GradingHistoryProps) {
   const [search, setSearch] = useState("");
   const filtered = useMemo(() => {
     if (!search.trim()) return history;
