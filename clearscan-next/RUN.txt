@@ -1,0 +1,17 @@
+TO RUN THE APP:
+================
+
+OPTION A — No Node / quick preview
+   Double-click:  OPEN-IN-BROWSER.html
+   Opens in your browser immediately (preview only).
+
+OPTION B — Full app (camera, Clerk sign-in)
+   1. Double-click:  START-HERE.command
+      (If macOS blocks it: Right-click → Open → Open)
+   OR in Terminal:  cd to this folder, then run:  ./run-dev.sh
+   2. Wait until you see "Ready" in the Terminal window.
+   3. Open your browser and go to:  http://localhost:3000
+   4. Keep the Terminal window open. Press Ctrl+C to stop.
+
+"command not found: npm"? run-dev.sh looks for Node in common places.
+No Node at all? Install from https://nodejs.org (LTS) or run START-HERE.command (it tries Homebrew).

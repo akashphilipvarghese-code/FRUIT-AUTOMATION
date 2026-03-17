@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   async rewrites() {
     return [
-      { source: "/api/compare", destination: "http://localhost:8000/compare" },
+      { source: "/api/compare", destination: "http://localhost:8003/compare" },
     ];
   },
 };

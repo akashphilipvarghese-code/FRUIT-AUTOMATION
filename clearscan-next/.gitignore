@@ -1,0 +1,7 @@
+# env (secrets - do not commit)
+.env
+.env.local
+.env*.local
+
+# clerk configuration (can include secrets)
+/.clerk/

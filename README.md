@@ -50,11 +50,15 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 ## API
 
 - `POST /analyze` — Upload image, get ripeness results
-- `POST /compare` — **ClearScan AI:** Compare image to fruit_dataset (Unripe, Semi-ripe, Ripe); returns ripeness stage, confidence, top 3 similar images (MobileNetV2 + cosine similarity)
+- `POST /compare` — **ClearScan AI:** Compare image to fruit_dataset (Unripe, Semi-ripe, Ripe); returns ripeness stage, confidence, top 3 similar images. Uses **HybridFruitNet** (PyTorch) when available, else MobileNetV2 + dataset or demo.
 - `POST /analyze/batch` — Batch upload multiple images
 - `GET /users` — Admin: list users
 - `GET /confidence-logs` — Admin: model confidence logs
 - `GET /scan-history` — Scan history
+
+## HybridFruitNet integration
+
+When [HybridFruitNet](https://github.com/your-org/HybridFruitNet) is installed as a sibling of FruityVisionAI (e.g. both under `Desktop/`), the backend uses it for `POST /compare` ripeness inference. Place HybridFruitNet at `../HybridFruitNet` relative to FruityVisionAI, or set `HYBRID_FRUIT_NET_PATH` to its directory. Ensure `weights/best.pt` exists in HybridFruitNet for inference. Backend falls back to CompareEngine (dataset) or demo if HybridFruitNet is unavailable.
 
 ## Training a Ripeness Classifier (ClearScan)
 

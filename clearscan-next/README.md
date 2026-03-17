@@ -4,6 +4,8 @@ Mobile-responsive landing for **Fruit Quality Comparison**: camera capture, lase
 
 ## Run (from project root)
 
+If you see **`command not found: npm`**, install Node.js first — see **[SETUP-NODE.md](./SETUP-NODE.md)**.
+
 ```bash
 # Option A: One script (starts backend + frontend)
 ./run_clearscan.sh

@@ -29,6 +29,11 @@ backend/data/*.npz
 *.sqlite
 *.sqlite3
 
+# Local datasets (do not commit large image corpora)
+fruit_dataset/Unripe/
+fruit_dataset/Semi-ripe/
+fruit_dataset/Ripe/
+
 # IDE & OS
 .DS_Store
 .idea/

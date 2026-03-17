@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional, List
 import json
@@ -44,6 +45,7 @@ def get_compare_engine():
         return _compare_engine
     if not _compare_engine_tried:
         _compare_engine_tried = True
+        # 1) Try existing CompareEngine (MobileNetV2 + dataset)
         npz_path = Path(__file__).resolve().parent / "data" / "compare_features.npz"
         if npz_path.is_file():
             try:
@@ -54,8 +56,26 @@ def get_compare_engine():
                     return _compare_engine
             except Exception:
                 pass
+        # 2) Try HybridFruitNet (PyTorch detection + ripeness) if available
+        try:
+            from hybrid_compare_engine import get_hybrid_compare
+            hybrid_compare = get_hybrid_compare()
+            if hybrid_compare is not None:
+                _compare_engine = _HybridFruitNetAdapter(hybrid_compare)
+                return _compare_engine
+        except Exception:
+            pass
     _compare_engine = _make_demo_engine()
     return _compare_engine
+
+
+class _HybridFruitNetAdapter:
+    """Wraps HybridFruitNet compare(image_bytes) -> dict for get_compare_engine()."""
+    def __init__(self, compare_fn):
+        self._compare = compare_fn
+
+    def compare(self, image_bytes: bytes) -> dict:
+        return self._compare(image_bytes)
 
 app = FastAPI(title="FruityVision AI", version="1.0.0")
 
@@ -76,6 +96,7 @@ class AnalyzeResponse(BaseModel):
     detections: List[dict]
     ripeness_meter: float
     counts: dict
+    fruit_counts: Optional[dict] = None
     inference_time_ms: float
     scan_id: Optional[int] = None
 
@@ -225,24 +246,42 @@ async def health():
     return {"status": "ok"}
 
 
-# Serve ClearScan at / (works with only Python; no Node/npm)
-_CLEARSCAN_HTML = Path(__file__).resolve().parent.parent / "clearscan_standalone.html"
-_STANDALONE_HTML = Path(__file__).resolve().parent.parent / "frontend_standalone.html"
+# Serve frontend at / : prefer built clearscan-app (React with new GradeResult), else standalone HTML
+_BACKEND_DIR = Path(__file__).resolve().parent
+_PROJECT_ROOT = _BACKEND_DIR.parent
+_CLEARSCAN_APP_DIST = _PROJECT_ROOT / "clearscan-app" / "dist"
+_CLEARSCAN_HTML = _PROJECT_ROOT / "clearscan_standalone.html"
+_STANDALONE_HTML = _PROJECT_ROOT / "frontend_standalone.html"
+_GRADE_DEMO_HTML = _PROJECT_ROOT / "grade_result_demo.html"
 
 
-@app.get("/", response_class=HTMLResponse)
-async def serve_frontend():
-    """Serve ClearScan UI at / so one server = backend + app. No npm required."""
-    if _CLEARSCAN_HTML.is_file():
-        r = FileResponse(_CLEARSCAN_HTML)
+@app.get("/demo", response_class=HTMLResponse)
+async def serve_grade_demo():
+    """Serve the new industrial grade dashboard demo (no npm build required)."""
+    if _GRADE_DEMO_HTML.is_file():
+        r = FileResponse(_GRADE_DEMO_HTML)
         r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        r.headers["Pragma"] = "no-cache"
         return r
-    if _STANDALONE_HTML.is_file():
-        return FileResponse(_STANDALONE_HTML)
-    return HTMLResponse(
-        "<h1>FruityVision AI</h1><p>Backend running. Add clearscan_standalone.html to project root and restart.</p>"
-    )
+    return HTMLResponse("<h1>Demo not found</h1><p>grade_result_demo.html missing.</p>", status_code=404)
+
+
+if _CLEARSCAN_APP_DIST.is_dir() and (_CLEARSCAN_APP_DIST / "index.html").is_file():
+    # Serve built React app (clearscan-app) so new GradeResult UI is shown at localhost:8000
+    app.mount("/", StaticFiles(directory=str(_CLEARSCAN_APP_DIST), html=True), name="spa")
+else:
+    @app.get("/", response_class=HTMLResponse)
+    async def serve_frontend():
+        """Fallback: standalone HTML when clearscan-app has not been built."""
+        if _CLEARSCAN_HTML.is_file():
+            r = FileResponse(_CLEARSCAN_HTML)
+            r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            r.headers["Pragma"] = "no-cache"
+            return r
+        if _STANDALONE_HTML.is_file():
+            return FileResponse(_STANDALONE_HTML)
+        return HTMLResponse(
+            "<h1>FruityVision AI</h1><p>Backend running. Build the React app to see the new UI: <code>cd clearscan-app && npm run build</code></p>"
+        )
 
 
 if __name__ == "__main__":

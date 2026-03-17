@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ClearScan AI</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #000;
+      color: #e5e5e5;
+      font-family: system-ui, -apple-system, sans-serif;
+      background-image:
+        linear-gradient(to right, rgba(40,40,40,.15) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(40,40,40,.15) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    header {
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.9);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { font-weight: 600; font-size: 1.125rem; color: #fff; }
+    .logo span { color: #FF8C00; }
+    .auth-btns { display: flex; gap: .5rem; }
+    .btn {
+      padding: .5rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: transparent;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 0.875rem;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn:hover { color: #FF8C00; border-color: #FF8C00; }
+    .btn.primary { background: #FF8C00; color: #000; border-color: #FF8C00; }
+    .btn.primary:hover { opacity: .9; }
+    main { max-width: 56rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .card {
+      background: rgba(26,26,26,.6);
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+    }
+    .card h1 { color: #fff; font-size: 1.5rem; margin: 0 0 .5rem; }
+    .card p { color: #9ca3af; margin: 0 0 1.5rem; }
+    .setup-box {
+      background: rgba(255,140,0,.08);
+      border: 1px solid rgba(255,140,0,.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+      text-align: left;
+    }
+    .setup-box h2 { color: #FF8C00; font-size: 1rem; margin: 0 0 .75rem; }
+    .setup-box p { color: #d1d5db; font-size: 0.875rem; margin: 0 0 .5rem; }
+    .setup-box a { color: #FF8C00; }
+    .setup-box ol { margin: .5rem 0 0 1.25rem; padding: 0; color: #9ca3af; font-size: 0.875rem; }
+    footer {
+      border-top: 1px solid #333;
+      padding: 1rem 1.5rem;
+      max-width: 56rem;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+    .dot { display: inline-block; width: 6px; height: 6px; background: #22c55e; border-radius: 50%; margin-right: 4px; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 50% { opacity: .5; } }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="logo">ClearScan <span>AI</span></span>
+    <div class="auth-btns">
+      <a href="#" class="btn">Sign in</a>
+      <a href="#" class="btn primary">Sign up</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h1>Fruit Quality Comparison</h1>
+      <p>Industrial fruit ripeness comparison using AI</p>
+      <p style="color:#6b7280;font-size:0.875rem;">This is a preview. The full app (camera, scan, Clerk auth) runs with Node.js.</p>
+
+      <div class="setup-box">
+        <h2>To run the full app</h2>
+        <p>Node.js is required. Then start the server and open <strong>http://localhost:3000</strong></p>
+        <ol>
+          <li>Install Node: <a href="https://nodejs.org" target="_blank" rel="noopener">nodejs.org</a> (download LTS, run the installer)</li>
+          <li>In Terminal, run: <code style="background:#111;padding:2px 6px;border-radius:4px;">cd /Users/apple/Desktop/FruityVisionAI/clearscan-next && npm install && npm run dev</code></li>
+          <li>Or double‑click <strong>START-HERE.command</strong> in this folder (it will try to install Node via Homebrew if needed)</li>
+        </ol>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <span>© 2026 ClearScan AI</span>
+    <span><span class="dot"></span> Preview</span>
+  </footer>
+</body>
+</html>

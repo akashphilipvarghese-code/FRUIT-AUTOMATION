@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>ClearScan AI – Industrial Grade Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #050505; color: #fff; min-height: 100vh; }
+    .container { max-width: 56rem; margin: 0 auto; padding: 1.5rem 1rem; }
+    @media (min-width: 640px) { .container { padding: 2rem 1.5rem; } }
+    .card { border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); backdrop-filter: blur(24px); }
+    .card-dark { background: #0a0a0a; }
+    .section-title { font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    @media (min-width: 640px) { .grid-2 { gap: 1rem; } }
+    .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    @media (min-width: 640px) { .grid-2x2 { gap: 1rem; } }
+    .grid-main { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    @media (min-width: 1024px) { .grid-main { grid-template-columns: 2fr 1fr; } }
+    .metric-card { padding: 1rem; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.1); background: #0a0a0a; }
+    @media (min-width: 640px) { .metric-card { padding: 1.25rem; } }
+    .metric-label { font-size: 0.75rem; color: #6b7280; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    .metric-value { font-size: 1.25rem; font-weight: 700; tabular-nums; }
+    @media (min-width: 640px) { .metric-value { font-size: 1.5rem; } }
+    .progress-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .progress-row:last-child { margin-bottom: 0; }
+    .progress-track { flex: 1; min-width: 0; }
+    .progress-header { display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.25rem; }
+    .progress-bar { height: 0.625rem; border-radius: 9999px; background: #0a0a0a; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 9999px; transition: width 0.7s ease; }
+    .fill-blue { background: #3b82f6; }
+    .fill-purple { background: #a855f7; }
+    .fill-emerald { background: #10b981; }
+    .fill-amber { background: #f59e0b; }
+    .img-wrap { aspect-ratio: 4/3; background: #0a0a0a; position: relative; overflow: hidden; }
+    .img-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    .grade-badge { position: absolute; top: 0.75rem; right: 0.75rem; padding: 0.375rem 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; }
+    .grade-a { background: #22c55e; color: #000; }
+    .grade-b { background: #3b82f6; color: #fff; }
+    .grade-c { background: #f59e0b; color: #000; }
+    .grade-d { background: #ef4444; color: #fff; }
+    .score-panel { padding: 1.25rem; display: flex; flex-direction: column; justify-content: center; }
+    @media (min-width: 640px) { .score-panel { padding: 1.5rem; } }
+    .score-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin-bottom: 0.25rem; }
+    .score-value { font-size: 2.5rem; font-weight: 700; }
+    @media (min-width: 640px) { .score-value { font-size: 3rem; } }
+    .score-bar { margin-top: 1rem; height: 0.5rem; border-radius: 9999px; background: rgba(255,255,255,0.1); overflow: hidden; }
+    .price-gradient { height: 0.625rem; border-radius: 9999px; background: linear-gradient(to right, #eab308, #22c55e, #10b981); }
+    .price-input-wrap { position: relative; margin-bottom: 1.5rem; }
+    .price-input { width: 100%; padding: 1rem 2.5rem 1rem 2.5rem; font-size: 1.25rem; font-weight: 700; background: #0a0a0a; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; color: #fff; }
+    @media (min-width: 640px) { .price-input { padding: 1.25rem 3.5rem 1.25rem 2.5rem; font-size: 1.5rem; } }
+    .price-input:focus { outline: none; border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,0.2); }
+    .price-prefix { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); font-size: 1.25rem; font-weight: 700; color: #6b7280; }
+    .price-suffix { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); font-size: 0.875rem; color: #6b7280; }
+    .btn-group { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.25rem; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+    @media (min-width: 640px) { .btn { font-size: 1rem; } }
+    .btn-amber { background: #f59e0b; color: #000; }
+    .btn-amber:hover { background: #fbbf24; }
+    .btn-green-outline { background: transparent; border: 2px solid #22c55e; color: #22c55e; }
+    .btn-green-outline:hover { background: rgba(34,197,94,0.1); }
+    .btn-square { width: 3rem; height: 3rem; padding: 0; }
+    .btn-square:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.4); }
+    .trace-card { padding: 1rem; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.1); background: #0a0a0a; }
+    @media (min-width: 640px) { .trace-card { padding: 1.25rem; } }
+    .trace-label { font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .trace-name { font-weight: 600; margin-bottom: 0.5rem; }
+    .trace-gps { font-size: 0.875rem; color: #9ca3af; font-family: ui-monospace, monospace; display: flex; align-items: center; gap: 0.5rem; }
+    .icon { width: 1rem; height: 1rem; flex-shrink: 0; }
+    .spacer { margin-bottom: 1.5rem; }
+    @media (min-width: 640px) { .spacer { margin-bottom: 2rem; } }
+    .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #f59e0b; background: none; border: none; cursor: pointer; font-size: 0.875rem; margin-bottom: 1rem; text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
+    .text-green-500 { color: #22c55e; }
+    .text-gray-400 { color: #9ca3af; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back-link">← Back to Scan</a>
+
+    <!-- Grade header + image -->
+    <div class="grid-main spacer">
+      <div class="card overflow-hidden">
+        <div class="img-wrap">
+          <img id="demo-img" src="https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&h=450&fit=crop" alt="Analyzed fruit" />
+          <span id="grade-badge" class="grade-badge grade-a">Grade A</span>
+        </div>
+      </div>
+      <div class="card score-panel">
+        <p class="score-label">Overall Score</p>
+        <p id="score-value" class="score-value text-green-500">93<span style="font-size:0.6em;font-weight:400;color:#6b7280">/100</span></p>
+        <p id="fruit-type" class="text-gray-400" style="margin-top:0.5rem;text-transform:capitalize">mango</p>
+        <div class="score-bar">
+          <div id="score-fill" class="progress-fill fill-emerald" style="width:93%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Four-stage progress -->
+    <section class="card spacer" style="padding:1rem 1.5rem">
+      <h3 class="section-title">Analysis Progress</h3>
+      <div class="progress-row">
+        <svg class="icon text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+        <div class="progress-track">
+          <div class="progress-header"><span class="text-gray-400">Size</span><span class="font-semibold">93%</span></div>
+          <div class="progress-bar"><div class="progress-fill fill-blue" style="width:93%"></div></div>
+        </div>
+      </div>
+      <div class="progress-row">
+        <svg class="icon text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+        <div class="progress-track">
+          <div class="progress-header"><span class="text-gray-400">Color</span><span class="font-semibold">96%</span></div>
+          <div class="progress-bar"><div class="progress-fill fill-purple" style="width:96%"></div></div>
+        </div>
+      </div>
+      <div class="progress-row">
+        <svg class="icon text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86 0l-2.386.477a2 2 0 00-1.022.547m-1.172 2.172L2.465 21.172a.75.75 0 01-.474-1.327l5.401-4.248a2 2 0 00.75-1.448V9.5a.75.75 0 011.5 0v5.497c0 .554.224 1.086.628 1.47l5.4 4.248a.75.75 0 01-.474 1.327L12 18.172l-5.657 2.828a.75.75 0 01-.707 0l-2.829-1.414a.75.75 0 010-1.342l2.829-1.414L12 14.828l5.657 2.828 2.829 1.414a.75.75 0 010 1.342l-2.829 1.414L12 18.172z"/></svg>
+        <div class="progress-track">
+          <div class="progress-header"><span class="text-gray-400">Ripeness</span><span class="font-semibold">70%</span></div>
+          <div class="progress-bar"><div class="progress-fill fill-emerald" style="width:70%"></div></div>
+        </div>
+      </div>
+      <div class="progress-row">
+        <svg class="icon text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+        <div class="progress-track">
+          <div class="progress-header"><span class="text-gray-400">Quality</span><span class="font-semibold">78%</span></div>
+          <div class="progress-bar"><div class="progress-fill fill-amber" style="width:78%"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Metrics grid 2x2 -->
+    <section class="grid-2x2 spacer">
+      <div class="metric-card">
+        <div class="metric-label"><svg class="icon text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> Surface Defects</div>
+        <p class="metric-value">4%</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label"><svg class="icon text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg> Area</div>
+        <p class="metric-value">27 cm²</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label"><svg class="icon text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg> Perimeter</div>
+        <p class="metric-value">27 cm</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label"><svg class="icon text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Analyzed</div>
+        <p class="metric-value">09:34 PM</p>
+      </div>
+    </section>
+
+    <!-- Transaction Traceability -->
+    <section class="card spacer" style="padding:1rem 1.5rem">
+      <h3 class="section-title">Transaction Traceability</h3>
+      <div class="grid-2">
+        <div class="trace-card">
+          <p class="trace-label">Seller (Origin)</p>
+          <p class="trace-name">Origin Farm</p>
+          <p class="trace-gps"><svg class="icon text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg> 8.5241° N, 76.9366° E</p>
+        </div>
+        <div class="trace-card">
+          <p class="trace-label">Buyer (Target)</p>
+          <p class="trace-name">Target Buyer</p>
+          <p class="trace-gps"><svg class="icon text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg> 8.4833° N, 76.9167° E</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="card spacer" style="padding:1rem 1.5rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem">
+        <svg class="icon text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <h3 class="section-title" style="margin:0">Valuation</h3>
+      </div>
+      <div style="margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#6b7280;margin-bottom:0.5rem">
+          <span>Suggested Range (Grade A)</span>
+          <span style="color:#22c55e;font-weight:500">$4.00 – $5.50/kg</span>
+        </div>
+        <div class="price-gradient"></div>
+      </div>
+      <div class="price-input-wrap">
+        <label style="display:block;font-size:0.875rem;color:#6b7280;margin-bottom:0.5rem">Enter Your Price per kg</label>
+        <span class="price-prefix">$</span>
+        <input type="number" step="0.01" min="0" placeholder="4.00" class="price-input" id="price-input" />
+        <span class="price-suffix">/kg</span>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-amber" onclick="window.location.href='/'">&#128269; Analyze New Sample</button>
+        <button class="btn btn-green-outline">&#128101; Find Buyers</button>
+        <button class="btn btn-square" style="border:1px solid rgba(255,255,255,0.2);color:#9ca3af" title="Export">&#128229;</button>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

@@ -92,6 +92,51 @@ class MockViTForRipeness:
         return state, conf, probs.tolist()
 
 
+class MockViTForFruit:
+    """
+    Mock ViT for fruit classification.
+    This is a lightweight heuristic placeholder so the API can "auto-detect fruit"
+    without shipping a real fruit-classification checkpoint.
+    """
+
+    FRUITS = ["Apple", "Banana", "Orange", "Lemon", "Guava", "Pomegranate"]
+
+    def classify(self, image: Image.Image) -> Tuple[str, float]:
+        """
+        Returns (fruit_name, confidence).
+        Heuristic: uses average RGB + aspect ratio to produce a stable guess.
+        """
+        arr = np.array(image.convert("RGB"))
+        mean = arr.reshape(-1, 3).mean(axis=0)  # R,G,B
+        r, g, b = mean.tolist()
+        w, h = image.size
+        aspect = (w / max(h, 1.0))
+
+        # Very rough rules (stable + deterministic-ish)
+        # Banana: tends to be bright and yellow-ish (R+G high, B lower), elongated crop sometimes.
+        if (r + g) > 310 and b < 120 and (aspect > 1.15 or aspect < 0.85):
+            return "Banana", 0.72
+
+        # Orange: strong red channel, moderate green, lower blue.
+        if r > 140 and g > 95 and b < 120:
+            return "Orange", 0.66
+
+        # Lemon: brighter and higher green than orange-ish, still low blue.
+        if r > 160 and g > 150 and b < 140:
+            return "Lemon", 0.62
+
+        # Apple: red/green balanced, not too dark.
+        if r > 120 and g > 110 and b > 90:
+            return "Apple", 0.58
+
+        # Pomegranate: deeper red/purple (R high, G lower).
+        if r > 130 and g < 110:
+            return "Pomegranate", 0.55
+
+        # Guava fallback
+        return "Guava", 0.52
+
+
 class MockNecroticAttentionMap:
     """Simulates attention map for necrotic spot patterns in Over-Ripe fruits"""
     
@@ -131,6 +176,7 @@ class RipenessEngine:
     def __init__(self):
         self.yolo = MockYOLOv12()
         self.vit = MockViTForRipeness()
+        self.vit_fruit = MockViTForFruit()
         self.necrotic = MockNecroticAttentionMap()
     
     def analyze(self, image_bytes: bytes) -> dict:
@@ -147,6 +193,7 @@ class RipenessEngine:
         
         detections = []
         ripeness_scores = []
+        fruit_counts = {}
         
         for x1, y1, x2, y2, det_conf in boxes:
             crop = image.crop((x1, y1, x2, y2))
@@ -155,6 +202,10 @@ class RipenessEngine:
             t1 = time.perf_counter()
             ripeness_state, vit_conf, probs = self.vit.classify(crop)
             vit_time = (time.perf_counter() - t1) * 1000
+
+            # Step 2b: ViT fruit classification (mock)
+            fruit_name, fruit_conf = self.vit_fruit.classify(crop)
+            fruit_counts[fruit_name] = fruit_counts.get(fruit_name, 0) + 1
             
             # Ripeness score 0-100 (Unripe=0, Over-Ripe=100)
             state_to_score = {"Unripe": 15, "Semi-Ripe": 40, "Ripe": 70, "Over-Ripe": 95}
@@ -168,6 +219,8 @@ class RipenessEngine:
             
             detections.append({
                 "bbox": [x1, y1, x2, y2],
+                "fruit": fruit_name,
+                "fruit_confidence": round(float(fruit_conf), 3),
                 "ripeness": ripeness_state,
                 "confidence": round(det_conf, 3),
                 "ripeness_score": ripeness_score,
@@ -192,6 +245,7 @@ class RipenessEngine:
             "detections": detections,
             "ripeness_meter": ripeness_meter,
             "counts": counts,
+            "fruit_counts": fruit_counts,
             "inference_time_ms": round(total_time, 2),
             "model_confidence_log": {
                 "yolo": {"confidence": avg_det_conf, "time_ms": yolo_time},
