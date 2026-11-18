@@ -1,0 +1,30 @@
+name: Backend CORS regression tests
+
+on:
+  pull_request:
+    paths:
+      - "backend/cors_config.py"
+      - "backend/tests/test_cors_config.py"
+      - "backend/main.py"
+      - ".github/workflows/cors-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/cors_config.py"
+      - "backend/tests/test_cors_config.py"
+      - "backend/main.py"
+      - ".github/workflows/cors-tests.yml"
+
+jobs:
+  test-cors-config:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run configuration unit tests
+        run: python -m unittest discover -s backend/tests -p "test_cors_config.py" -v
