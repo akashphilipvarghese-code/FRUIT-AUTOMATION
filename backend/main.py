@@ -20,6 +20,7 @@ import json
 
 from database import init_db, get_db, ScanHistory, ModelConfidenceLog, User
 from models.ripeness_engine import RipenessEngine
+from inference_metadata import annotate_inference_mode
 
 # Compare engine: use demo-only by default so server never crashes (no TensorFlow load).
 # When backend/data/compare_features.npz exists, we try to load the real engine on first /compare.
@@ -230,7 +231,7 @@ async def compare_image(file: Optional[UploadFile] = File(None)):
             }
         engine = get_compare_engine()
         result = engine.compare(contents)
-        return result
+        return annotate_inference_mode(result)
     except Exception as e:
         return {
             "ripeness_stage": "Unknown",
