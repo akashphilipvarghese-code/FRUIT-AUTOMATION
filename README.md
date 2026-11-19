@@ -126,25 +126,19 @@ FruityVisionAI/
 └── requirements-train.txt
 ```
 
-## Push to GitHub
+## Engineering verification and limitations
 
-The repo is already initialized with an initial commit. To add it to GitHub:
+This is a research and demonstration prototype, **not a validated production grading system**.
 
-1. **Create a new repository** on [github.com](https://github.com/new):
-   - Name it (e.g. `FruityVisionAI` or `clearscan-ai`).
-   - Do **not** add a README, .gitignore, or license (they already exist).
+- The YOLOv12 and ViT components described above are currently **mock implementations** in the documented architecture. Do not interpret their outputs as trained-model accuracy.
+- The `/compare` endpoint can use HybridFruitNet when its weights are configured, dataset-derived features when available, or a **demo fallback**. Results from the demo path are not scientific predictions.
+- To run dataset-backed comparisons, follow the feature export and model setup instructions above.
+- For reproducible evaluation, record the dataset source, class balance, train/validation/test split, random seed, per-class precision/recall/F1, confusion matrix, and representative failure cases. These results have **not yet been established in this README**.
+- Do not upload personal images, private client data, or licensed model weights without permission.
 
-2. **Add the remote and push:**
-   ```bash
-   cd /path/to/FruityVisionAI
-   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-   git branch -M main
-   git push -u origin main
-   ```
-   Replace `YOUR_USERNAME` and `YOUR_REPO_NAME` with your GitHub username and repo name.
+## Development roadmap
 
-3. If you use SSH:
-   ```bash
-   git remote add origin git@github.com:YOUR_USERNAME/YOUR_REPO_NAME.git
-   git push -u origin main
-   ```
+1. Separate mock/demo and real-inference responses with an explicit machine-readable mode field.
+2. Add repeatable unit and API tests for inference selection and invalid image uploads.
+3. Create a held-out dataset evaluation script and publish measured results with methodology.
+4. Verify CI and deployment configuration before making production-readiness claims.
