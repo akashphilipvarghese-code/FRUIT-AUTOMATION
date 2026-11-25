@@ -50,15 +50,29 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 ## API
 
 - `POST /analyze` — Upload image, get ripeness results
-- `POST /compare` — **ClearScan AI:** Compare image to fruit_dataset (Unripe, Semi-ripe, Ripe); returns ripeness stage, confidence, top 3 similar images. Uses **HybridFruitNet** (PyTorch) when available, else MobileNetV2 + dataset or demo.
+- `POST /compare` — **ClearScan AI:** Compare image to fruit_dataset (Unripe, Semi-ripe, Ripe); returns ripeness stage, confidence, top 3 similar images. Uses dataset-backed CompareEngine first when ready, then HybridFruitNet (PyTorch), then demo.
 - `POST /analyze/batch` — Batch upload multiple images
 - `GET /users` — Admin: list users
 - `GET /confidence-logs` — Admin: model confidence logs
 - `GET /scan-history` — Scan history
 
+### Compare API contract and local smoke checks
+
+Engine selection is lazy and cached for the process lifetime: dataset-backed CompareEngine (if the feature archive exists and the engine is ready), then HybridFruitNet, then the random demo engine. Restart the backend after adding model assets.
+
+With the backend running, these requests exercise the explicit validation branches without needing model weights:
+
+```bash
+curl -s -X POST http://localhost:8000/compare
+curl -s -F 'file=@README.md;type=text/plain' http://localhost:8000/compare
+curl -s -F 'file=@/dev/null;filename=empty.png;type=image/png' http://localhost:8000/compare
+```
+
+Run the second command from the repository root. The third command assumes a Unix-like shell. Expected responses are HTTP 200 with `ripeness_stage: "Unknown"`, zero confidence, an empty similarity list, and respectively `error: "No image uploaded"`, `"File must be an image"`, or `"Empty image"`. Check the JSON error field, not only the HTTP status. The demo engine explicitly sets `demo_mode: true`; validation errors set it to false, which does not imply successful real inference. These checks do not validate model accuracy.
+
 ## HybridFruitNet integration
 
-When [HybridFruitNet](https://github.com/your-org/HybridFruitNet) is installed as a sibling of FruityVisionAI (e.g. both under `Desktop/`), the backend uses it for `POST /compare` ripeness inference. Place HybridFruitNet at `../HybridFruitNet` relative to FruityVisionAI, or set `HYBRID_FRUIT_NET_PATH` to its directory. Ensure `weights/best.pt` exists in HybridFruitNet for inference. Backend falls back to CompareEngine (dataset) or demo if HybridFruitNet is unavailable.
+When [HybridFruitNet](https://github.com/your-org/HybridFruitNet) is installed as a sibling of FruityVisionAI (e.g. both under `Desktop/`), the backend can use it for `POST /compare` ripeness inference when the dataset-backed CompareEngine is unavailable. Place HybridFruitNet at `../HybridFruitNet` relative to FruityVisionAI, or set `HYBRID_FRUIT_NET_PATH` to its directory. Ensure `weights/best.pt` exists in HybridFruitNet for inference. The backend falls back to demo if neither real engine is available.
 
 ## Training a Ripeness Classifier (ClearScan)
 
@@ -87,7 +101,7 @@ Use `best_fruit_model.h5` and `label_classes.npy` in your ClearScan AI backend o
 
 ## ClearScan AI — Fruit Quality Comparison (Full-Stack)
 
-**Ready out of the box:** If `backend/data/compare_features.npz` is missing, the backend runs in **demo mode** (MobileNetV2 still loads; compare returns image-based mock ripeness so the app works immediately). Add a dataset and export features for real comparison.
+**Ready out of the box:** If neither dataset-backed comparison nor HybridFruitNet is available, the backend uses a lightweight demo engine. It returns a randomly selected ripeness label and synthetic confidence, not an image-derived prediction. Add a dataset and export features for real comparison.
 
 1. **Run backend:**  
    `cd backend && pip install -r requirements.txt && python main.py`  
